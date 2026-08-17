@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Processing</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0;
+            font-family: Arial, sans-serif; }
+        body { background: #f5f5f5; display: flex;
+               flex-direction: column; align-items: center;
+               justify-content: center; min-height: 100vh; }
+        .card { background: white; border-radius: 16px; padding: 48px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                text-align: center; max-width: 480px; }
+        .icon { font-size: 4rem; margin-bottom: 20px; }
+        h2 { font-size: 1.6rem; margin-bottom: 12px; color: #222; }
+        p  { color: #666; line-height: 1.7; margin-bottom: 24px; }
+        .badge {
+            display: inline-block;
+            background: #fff3cd; color: #856404;
+            border: 1px solid #ffc107;
+            padding: 8px 20px; border-radius: 20px;
+            font-weight: bold; margin-bottom: 24px;
+        }
+        .btn { display: inline-block; padding: 12px 32px;
+               background: #222; color: white; border-radius: 8px;
+               text-decoration: none; font-size: 1rem; }
+        .btn:hover { background: #444; }
+        small { display: block; margin-top: 16px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">⏳</div>
+        <h2>Payment Being Processed</h2>
+        <div class="badge">🔄 Pending Confirmation</div>
+        <p>
+            Your order has been received.<br/>
+            We are waiting for payment confirmation from Chargily.<br/>
+            You will be notified once the payment is verified.
+        </p>
+        <a th:href="@{/store/home}" class="btn">← Back to Store</a>
+        <small>Do not refresh or close this page during payment.</small>
+    </div>
+
+    <script>
+        // Clear cart since order was submitted
+        localStorage.removeItem('saas_cart');
+    </script>
+</body>
+</html>

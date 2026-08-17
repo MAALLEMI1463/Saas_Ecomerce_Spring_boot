@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Store Not Found</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 80px; }
+        h2 { font-size: 2rem; color: #e44d26; margin-bottom: 16px; }
+        p  { color: #666; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <h2>🚫 Store Not Found</h2>
+    <p th:text="${errorMsg}">This store does not exist.</p>
+    <br/>
+    <a href="http://localhost:8080/login">← Go to main app</a>
+</body>
+</html>

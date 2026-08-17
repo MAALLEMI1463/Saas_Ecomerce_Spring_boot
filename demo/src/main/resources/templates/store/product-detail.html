@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title th:text="${product.name} + ' — ' + ${storeName}">Product — Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+<style>
+/* ═══════════════════════════════════════════════
+   RESET & DESIGN TOKENS  (identical to main template)
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:        #ffffff;
+  --surface:      #f8f7f4;
+  --surface-2:    #f2f0eb;
+  --border:       #e8e6e0;
+  --border-hover: #c8c5bc;
+  --ink:          #1a1916;
+  --ink-muted:    #6b6860;
+  --ink-faint:    #a8a59e;
+  --accent:       #c8502a;
+  --accent-deep:  #9e3c1c;
+  --accent-light: #f5ede9;
+  --accent-glow:  rgba(200,80,42,.18);
+
+  --shadow-sm: 0 1px 3px rgba(26,25,22,.06), 0 1px 2px rgba(26,25,22,.04);
+  --shadow-md: 0 4px 16px rgba(26,25,22,.09), 0 1px 4px rgba(26,25,22,.04);
+  --shadow-lg: 0 12px 40px rgba(26,25,22,.14), 0 4px 12px rgba(26,25,22,.06);
+
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --nav-h:     68px;
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --spring:    cubic-bezier(.34,1.56,.64,1);
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   NAVBAR  (identical to main template)
+═══════════════════════════════════════════════ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  height: var(--nav-h);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 220ms var(--ease), border-color 220ms var(--ease);
+}
+.nav.scrolled { box-shadow: var(--shadow-md); border-bottom-color: var(--border-hover); }
+
+.nav__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav__logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.nav__logo-mark {
+  width: 34px; height: 34px;
+  background: var(--ink);
+  border-radius: 8px;
+  flex-shrink: 0;
+  position: relative; overflow: hidden;
+  transition: transform 220ms var(--ease);
+}
+.nav__logo-mark::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 2.5px solid var(--white);
+  border-radius: 50%;
+  top: 7px; left: 7px;
+}
+.nav__logo-mark::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  bottom: 7px; right: 7px;
+}
+.nav__logo:hover .nav__logo-mark { transform: rotate(-6deg) scale(1.05); }
+
+.nav__logo-text {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  user-select: none;
+}
+.nav__logo-text em { font-style: italic; color: var(--accent); }
+
+.nav__spacer { flex: 1; }
+
+/* Search */
+.nav__search { position: relative; display: flex; align-items: center; }
+.search__icon {
+  position: absolute; left: 11px;
+  color: var(--ink-faint); pointer-events: none; display: flex;
+  transition: color 180ms;
+}
+.nav__search:focus-within .search__icon { color: var(--ink-muted); }
+.search__input {
+  height: 38px; width: 220px;
+  padding: 0 1rem 0 36px;
+  font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 300;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); outline: none;
+  transition: width 220ms var(--ease), border-color 180ms, background 180ms, box-shadow 180ms;
+}
+.search__input::placeholder { color: var(--ink-faint); }
+.search__input:hover  { border-color: var(--border-hover); background: var(--white); }
+.search__input:focus  { width: 280px; border-color: var(--ink); background: var(--white); box-shadow: 0 0 0 3px rgba(26,25,22,.06); }
+.search__kbd {
+  position: absolute; right: 10px;
+  font-size: .7rem; color: var(--ink-faint);
+  background: var(--border); border-radius: 4px; padding: 1px 5px;
+  pointer-events: none; transition: opacity 180ms;
+}
+.nav__search:focus-within .search__kbd { opacity: 0; }
+
+/* Actions */
+.nav__actions { display: flex; align-items: center; gap: .25rem; }
+
+.nav__btn {
+  position: relative;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: var(--radius);
+  background: transparent; color: var(--ink-muted); cursor: pointer;
+  text-decoration: none;
+  transition: color 180ms, background 180ms, border-color 180ms, transform 120ms;
+}
+.nav__btn:hover { color: var(--ink); background: var(--surface); border-color: var(--border); }
+.nav__btn:active { transform: scale(.93); }
+.nav__btn svg { display: block; }
+
+.cart-badge {
+  position: absolute; top: 5px; right: 5px;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  background: var(--accent); color: #fff;
+  font-size: .65rem; font-weight: 500; border-radius: 99px;
+  display: grid; place-items: center; line-height: 1; pointer-events: none;
+}
+
+.cart-wrapper { position: relative; }
+
+.nav__hamburger {
+  display: none; flex-direction: column; justify-content: center; gap: 5px;
+  width: 40px; height: 40px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; padding: 10px; transition: background 180ms;
+}
+.nav__hamburger span {
+  display: block; height: 1.5px;
+  background: var(--ink); border-radius: 2px;
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease);
+  transform-origin: center;
+}
+.nav__hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.nav__hamburger.open span:nth-child(2) { opacity: 0; }
+.nav__hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* Mobile drawer */
+.nav__drawer {
+  position: fixed; top: var(--nav-h); left: 0; right: 0;
+  background: var(--white); border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-md); padding: 1.25rem 1.5rem 1.5rem;
+  transform: translateY(-8px); opacity: 0; pointer-events: none;
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+  z-index: 999;
+}
+.nav__drawer.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.drawer__search { position: relative; }
+.drawer__search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); display: flex; }
+.drawer__search input {
+  width: 100%; height: 42px; padding: 0 1rem 0 36px;
+  font-family: 'DM Sans', sans-serif; font-size: .875rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--ink); outline: none;
+}
+.drawer__search input:focus { border-color: var(--ink); }
+
+@media (max-width: 768px) {
+  .search__kbd, .nav__search { display: none; }
+  .nav__hamburger { display: flex; }
+  .nav__inner { gap: 1rem; padding: 0 1.25rem; }
+}
+
+/* ═══════════════════════════════════════════════
+   BREADCRUMB
+═══════════════════════════════════════════════ */
+.breadcrumb {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 1.75rem) 2rem 0;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb a {
+  font-size: .8rem;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 160ms;
+}
+.breadcrumb a:hover { color: var(--ink-muted); }
+
+.breadcrumb__sep {
+  font-size: .8rem;
+  color: var(--ink-faint);
+  user-select: none;
+}
+
+.breadcrumb__current {
+  font-size: .8rem;
+  color: var(--ink-muted);
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* ═══════════════════════════════════════════════
+   PRODUCT DETAIL LAYOUT
+═══════════════════════════════════════════════ */
+.detail {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 6rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+/* ── IMAGE PANEL ── */
+.detail__img-panel {
+  position: sticky;
+  top: calc(var(--nav-h) + 1.5rem);
+}
+
+.detail__img-main {
+  aspect-ratio: 1 / 1;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.detail__img-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 2rem;
+  transition: transform 400ms var(--ease);
+}
+
+.detail__img-main:hover img { transform: scale(1.04); }
+
+/* Zoom badge */
+.detail__img-zoom {
+  position: absolute;
+  bottom: 14px; right: 14px;
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: grid; place-items: center;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+/* ── INFO PANEL ── */
+.detail__info {}
+
+/* Store tag above name */
+.detail__store-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-light);
+  border-radius: 99px;
+  padding: 4px 12px;
+  margin-bottom: 1rem;
+}
+
+.detail__store-dot {
+  width: 5px; height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(.7); }
+}
+
+/* Product name */
+.detail__name {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 1.25rem;
+}
+
+/* Price row */
+.detail__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: .875rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail__price {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.detail__price-currency {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink-muted);
+  letter-spacing: 0;
+}
+
+/* Description */
+.detail__desc-label {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: .625rem;
+}
+
+.detail__desc {
+  font-size: .975rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: var(--ink-muted);
+  margin-bottom: 2rem;
+}
+
+/* Features checklist */
+.detail__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  margin-bottom: 2rem;
+}
+
+.detail__feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .875rem;
+  color: var(--ink-muted);
+}
+
+.detail__feature-check {
+  width: 20px; height: 20px;
+  background: var(--accent-light);
+  border: 1px solid rgba(200,80,42,.2);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+/* Quantity selector */
+.detail__qty-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.detail__qty-label {
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  min-width: 60px;
+}
+
+.detail__qty {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  background: var(--surface);
+  border: none; cursor: pointer;
+  color: var(--ink-muted);
+  font-size: 1.1rem;
+  transition: background 160ms, color 160ms;
+}
+.qty-btn:hover { background: var(--surface-2); color: var(--ink); }
+
+.qty-input {
+  width: 52px; height: 38px;
+  border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  text-align: center;
+  font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 500;
+  color: var(--ink); background: var(--white);
+  outline: none;
+  -moz-appearance: textfield;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* CTA buttons */
+.detail__actions {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 2rem;
+}
+
+.btn-cart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 2rem;
+  background: var(--ink);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .95rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  width: 100%;
+  transition: background 200ms var(--ease), border-color 200ms, transform 120ms, box-shadow 200ms;
+}
+.btn-cart:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+.btn-cart:active { transform: scale(.97); }
+
+.btn-cart-arrow { transition: transform 200ms var(--spring); display: inline-flex; }
+.btn-cart:hover .btn-cart-arrow { transform: translateX(3px); }
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 1.75rem;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .875rem;
+  font-weight: 400;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  width: 100%;
+  transition: color 180ms, border-color 180ms, background 180ms, transform 120ms;
+}
+.btn-back:hover {
+  color: var(--ink);
+  border-color: var(--border-hover);
+  background: var(--white);
+  transform: translateY(-1px);
+}
+.btn-back:active { transform: scale(.97); }
+
+/* Trust row */
+.detail__trust {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .75rem;
+  color: var(--ink-muted);
+}
+
+.trust-chip svg { color: var(--accent); flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════
+   FOOTER  (identical to main template)
+═══════════════════════════════════════════════ */
+.footer {
+  background: #111009;
+  color: rgba(255,255,255,.75);
+  position: relative;
+  overflow: hidden;
+}
+
+.footer::after {
+  content: '';
+  position: absolute;
+  top: -120px; right: -120px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,80,42,.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.footer__main {
+  position: relative; z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 5rem 2rem 4rem;
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 1.4fr;
+  gap: 3rem;
+}
+
+.footer__logo {
+  display: inline-flex; align-items: center; gap: 10px;
+  text-decoration: none; margin-bottom: 1.25rem;
+}
+.footer__logo-mark {
+  width: 34px; height: 34px;
+  background: var(--white); border-radius: 8px;
+  position: relative; flex-shrink: 0; overflow: hidden;
+}
+.footer__logo-mark::before {
+  content: ''; position: absolute;
+  width: 14px; height: 14px;
+  border: 2.5px solid #111009; border-radius: 50%; top: 7px; left: 7px;
+}
+.footer__logo-mark::after {
+  content: ''; position: absolute;
+  width: 8px; height: 8px;
+  background: var(--accent); border-radius: 50%; bottom: 7px; right: 7px;
+}
+.footer__logo-text {
+  font-family: 'DM Serif Display', serif; font-size: 1.3rem;
+  letter-spacing: -0.02em; color: var(--white); line-height: 1;
+}
+.footer__logo-text em { font-style: italic; color: var(--accent); }
+
+.footer__tagline {
+  font-size: .875rem; font-weight: 300;
+  line-height: 1.75; color: rgba(255,255,255,.45);
+  max-width: 26ch; margin-bottom: 1.75rem;
+}
+
+.footer__socials { display: flex; gap: .625rem; }
+
+.social-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+  display: grid; place-items: center;
+  color: rgba(255,255,255,.5); cursor: pointer; text-decoration: none;
+  transition: color 180ms, background 180ms, transform 140ms var(--spring);
+}
+.social-btn:hover { color: var(--white); background: rgba(255,255,255,.12); transform: translateY(-2px); }
+
+.footer__col-title {
+  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 1.25rem;
+}
+
+.footer__links { list-style: none; display: flex; flex-direction: column; gap: .7rem; }
+.footer__links a {
+  font-size: .875rem; font-weight: 300;
+  color: rgba(255,255,255,.55); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color 160ms, gap 200ms var(--ease);
+}
+.footer__links a::before {
+  content: ''; display: block; width: 0; height: 1px;
+  background: var(--accent); border-radius: 1px; transition: width 200ms var(--ease);
+}
+.footer__links a:hover { color: var(--white); gap: 9px; }
+.footer__links a:hover::before { width: 10px; }
+
+.footer__contact-list { list-style: none; display: flex; flex-direction: column; gap: .875rem; }
+.footer__contact-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .85rem; font-weight: 300;
+  color: rgba(255,255,255,.5); line-height: 1.5;
+}
+.footer__contact-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07);
+  display: grid; place-items: center; flex-shrink: 0;
+  color: var(--accent); margin-top: 1px;
+  transition: background 180ms, border-color 180ms;
+}
+.footer__contact-item:hover .footer__contact-icon {
+  background: rgba(200,80,42,.15); border-color: rgba(200,80,42,.25);
+}
+.footer__contact-item a { color: inherit; text-decoration: none; transition: color 160ms; }
+.footer__contact-item a:hover { color: rgba(255,255,255,.85); }
+.footer__contact-label {
+  display: block; font-size: .68rem; font-weight: 500; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(255,255,255,.25); margin-bottom: 2px;
+}
+
+.footer__newsletter-title {
+  font-family: 'DM Serif Display', serif; font-size: 1.05rem;
+  letter-spacing: -0.02em; color: var(--white); margin-bottom: .5rem; line-height: 1.3;
+}
+.footer__newsletter-sub {
+  font-size: .8rem; font-weight: 300;
+  color: rgba(255,255,255,.4); margin-bottom: 1.125rem; line-height: 1.6;
+}
+.footer__subscribe-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.footer__subscribe-input {
+  flex: 1; height: 40px; padding: 0 .875rem;
+  font-family: 'DM Sans', sans-serif; font-size: .825rem; font-weight: 300;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px; color: var(--white); outline: none; min-width: 0;
+  transition: border-color 180ms, background 180ms;
+}
+.footer__subscribe-input::placeholder { color: rgba(255,255,255,.25); }
+.footer__subscribe-input:focus { border-color: rgba(200,80,42,.5); background: rgba(255,255,255,.1); }
+.footer__subscribe-btn {
+  height: 40px; padding: 0 1rem;
+  background: var(--accent); color: var(--white);
+  font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 500;
+  border: none; border-radius: 9px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background 180ms, transform 120ms;
+  display: flex; align-items: center; gap: 6px;
+}
+.footer__subscribe-btn:hover { background: var(--accent-deep); }
+.footer__subscribe-btn:active { transform: scale(.95); }
+.footer__subscribe-note { font-size: .73rem; color: rgba(255,255,255,.25); line-height: 1.5; }
+.footer__subscribe-note a { color: rgba(255,255,255,.4); text-decoration: underline; transition: color 160ms; }
+.footer__subscribe-note a:hover { color: rgba(255,255,255,.7); }
+.footer__subscribe-success {
+  display: none; align-items: center; gap: 8px;
+  font-size: .82rem; color: #5ce07a; margin-top: .5rem;
+}
+.footer__subscribe-success.show { display: flex; }
+
+.footer__divider {
+  max-width: 1280px; margin: 0 auto; padding: 0 2rem;
+  border: none; border-top: 1px solid rgba(255,255,255,.07);
+  position: relative; z-index: 1;
+}
+
+.footer__bottom {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto; padding: 1.5rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer__copy { font-size: .78rem; color: rgba(255,255,255,.25); line-height: 1.6; }
+.footer__copy a { color: rgba(255,255,255,.4); text-decoration: none; transition: color 160ms; }
+.footer__copy a:hover { color: var(--accent); }
+.footer__bottom-links { display: flex; gap: 1.5rem; list-style: none; }
+.footer__bottom-links a { font-size: .78rem; color: rgba(255,255,255,.3); text-decoration: none; transition: color 160ms; }
+.footer__bottom-links a:hover { color: rgba(255,255,255,.65); }
+.footer__top-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09);
+  display: grid; place-items: center; cursor: pointer;
+  color: rgba(255,255,255,.4);
+  transition: color 180ms, background 180ms, transform 140ms var(--spring);
+}
+.footer__top-btn:hover { color: var(--white); background: rgba(255,255,255,.12); transform: translateY(-2px); }
+
+/* ── Footer responsive ── */
+@media (max-width: 1060px) {
+  .footer__main { grid-template-columns: 1.5fr 1fr 1fr; }
+  .footer__col--newsletter { grid-column: 1 / -1; max-width: 480px; }
+}
+@media (max-width: 680px) {
+  .footer__main { grid-template-columns: 1fr 1fr; padding: 3.5rem 1.25rem 3rem; gap: 2rem; }
+  .footer__brand { grid-column: 1 / -1; }
+  .footer__col--newsletter { max-width: 100%; }
+  .footer__bottom { padding: 1.25rem; }
+}
+@media (max-width: 420px) {
+  .footer__main { grid-template-columns: 1fr; }
+  .footer__bottom { flex-direction: column; align-items: flex-start; }
+  .footer__bottom-links { flex-wrap: wrap; gap: 1rem; }
+}
+
+/* ═══════════════════════════════════════════════
+   DETAIL RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .detail {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1.5rem 5rem;
+  }
+  .detail__img-panel { position: static; }
+}
+
+@media (max-width: 560px) {
+  .detail { padding: 1.5rem 1rem 4rem; }
+  .breadcrumb { padding: calc(var(--nav-h) + 1rem) 1rem 0; }
+  .detail__name { font-size: clamp(1.5rem, 7vw, 2.25rem); }
+  .detail__trust { gap: .875rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<header class="nav" id="navbar" role="banner">
+  <div class="nav__inner">
+
+    <a class="nav__logo"
+       th:href="@{/store/home(store=${storeName})}"
+       href="#"
+       aria-label="Store home">
+      <div class="nav__logo-mark" aria-hidden="true"></div>
+      <span class="nav__logo-text" th:text="${storeName}">Arc<em>lo</em></span>
+    </a>
+
+    <div class="nav__spacer" aria-hidden="true"></div>
+
+    <div class="nav__search" role="search">
+      <span class="search__icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <form th:action="@{/store/home}" action="#" method="get" style="display:contents;">
+        <input type="hidden" name="store" th:value="${storeName}" />
+        <input type="search"
+               class="search__input"
+               id="search-desktop"
+               name="search"
+               placeholder="Search products…"
+               aria-label="Search products" />
+      </form>
+      <span class="search__kbd" aria-hidden="true">⌘K</span>
+    </div>
+
+    <div class="nav__actions">
+      <div class="cart-wrapper">
+        <a class="nav__btn"
+           th:href="@{/store/cart(store=${storeName})}"
+           href="#"
+           aria-label="Shopping cart"
+           title="Cart">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M1 1h2l1.5 8.5h9l1.5-5.5H5" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="7.5" cy="14.5" r="1" fill="currentColor"/>
+            <circle cx="12.5" cy="14.5" r="1" fill="currentColor"/>
+          </svg>
+          <span class="cart-badge" id="cart-badge" aria-live="polite">0</span>
+        </a>
+      </div>
+
+      <button class="nav__hamburger" id="hamburger"
+              aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<nav class="nav__drawer" id="mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
+  <div class="drawer__search" role="search">
+    <span class="drawer__search-icon" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <input type="search" placeholder="Search products…" aria-label="Search products" />
+  </div>
+</nav>
+
+<!-- ═══════════════ BREADCRUMB ═══════════════ -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a th:href="@{/store/home(store=${storeName})}" href="#">Store</a>
+  <span class="breadcrumb__sep" aria-hidden="true">›</span>
+  <span class="breadcrumb__current" th:text="${product.name}">Product Name</span>
+</nav>
+
+<!-- ═══════════════ PRODUCT DETAIL ═══════════════ -->
+<main>
+  <div class="detail">
+
+    <!-- ── Left: Image ── -->
+    <div class="detail__img-panel">
+      <div class="detail__img-main">
+
+        <img th:src="@{'/images/' + ${product.image}}"
+             th:alt="${product.name}"
+             onerror="this.src='/images/default.png'"
+             id="product-img" />
+
+        <div class="detail__img-zoom" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M9 9l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M4.5 6h3M6 4.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Info ── -->
+    <div class="detail__info">
+
+      <!-- Store eyebrow -->
+      <div class="detail__store-tag">
+        <span class="detail__store-dot" aria-hidden="true"></span>
+        <span th:text="${storeName}">Store Name</span>
+      </div>
+
+      <!-- Product name -->
+      <h1 class="detail__name" th:text="${product.name}">Product Name</h1>
+
+      <!-- Price -->
+      <div class="detail__price-row">
+        <p class="detail__price">
+          <span th:text="${product.price}">0</span>
+          <span class="detail__price-currency">DA</span>
+        </p>
+      </div>
+
+      <!-- Description -->
+      <p class="detail__desc-label">About this product</p>
+      <p class="detail__desc" th:text="${product.description}">
+        Product description goes here. It gives shoppers all the context they need to make a confident purchase.
+      </p>
+
+      <!-- Quick feature list (static trust bullets) -->
+      <ul class="detail__features" aria-label="Key features">
+        <li class="detail__feature">
+          <span class="detail__feature-check" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          Available for immediate delivery
+        </li>
+        <li class="detail__feature">
+          <span class="detail__feature-check" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          Cash on delivery available
+        </li>
+        <li class="detail__feature">
+          <span class="detail__feature-check" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          Secure online payment
+        </li>
+      </ul>
+
+      <!-- Quantity selector -->
+      <div class="detail__qty-row">
+        <span class="detail__qty-label">Quantity</span>
+        <div class="detail__qty">
+          <button class="qty-btn" id="qty-minus" type="button" aria-label="Decrease quantity">−</button>
+          <input class="qty-input" id="qty-input" type="number" value="1" min="1" max="99"
+                 aria-label="Product quantity" />
+          <button class="qty-btn" id="qty-plus" type="button" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div class="detail__actions">
+
+        <!-- Add to Cart — Thymeleaf link -->
+        <a class="btn-cart"
+           th:href="@{/store/cart(store=${storeName})}"
+           href="#"
+           aria-label="Add to cart">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M1 1h2l1.5 8.5h9l1.5-5.5H5" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="7.5" cy="14.5" r="1" fill="currentColor"/>
+            <circle cx="12.5" cy="14.5" r="1" fill="currentColor"/>
+          </svg>
+          Add to Cart
+          <span class="btn-cart-arrow" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </a>
+
+        <!-- Back to Store -->
+        <a class="btn-back"
+           th:href="@{/store/home(store=${storeName})}"
+           href="#"
+           aria-label="Back to store">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M9 3L4 7.5 9 12" stroke="currentColor" stroke-width="1.4"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back to Store
+        </a>
+
+      </div>
+
+      <!-- Trust chips -->
+      <div class="detail__trust" aria-label="Trust indicators">
+        <span class="trust-chip">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 1L3 3v4c0 2.8 2 4.5 4 5.5 2-1 4-2.7 4-5.5V3L7 1Z"
+                  stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+          Secure Checkout
+        </span>
+        <span class="trust-chip">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M1 8l2.5 2.5a8 8 0 0 0 7-6.5" stroke="currentColor" stroke-width="1.3"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="3.5" r="2" stroke="currentColor" stroke-width="1.3"/>
+          </svg>
+          Free Returns
+        </span>
+        <span class="trust-chip">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M7 4v3.5l2 1.5" stroke="currentColor" stroke-width="1.3"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Fast Delivery
+        </span>
+      </div>
+
+    </div><!-- /detail__info -->
+  </div><!-- /detail -->
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer" role="contentinfo">
+  <div class="footer__main">
+
+    <!-- Brand -->
+    <div class="footer__brand">
+      <a class="footer__logo"
+         th:href="@{/store/home(store=${storeName})}"
+         href="#"
+         aria-label="Store home">
+        <div class="footer__logo-mark" aria-hidden="true"></div>
+        <span class="footer__logo-text" th:text="${storeName}">Arc<em>lo</em></span>
+      </a>
+      <p class="footer__tagline">
+        Curated tools and hardware for modern creators. Built to last, priced fairly, delivered fast.
+      </p>
+      <nav aria-label="Social media">
+        <div class="footer__socials">
+          <a href="#" class="social-btn" aria-label="Facebook">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M12 2H10C8.9 2 8 2.9 8 4v2H6v2.5h2V14h2.5V8.5H13L13.5 6H10.5V4.5c0-.3.2-.5.5-.5H12V2Z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="3.5" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="8" cy="8" r="2.8" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="11.5" cy="4.5" r=".75" fill="currentColor"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Twitter">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 2.5h3.5L8.5 7 12 2.5h2L10 8.5l4 5H10.5L7.5 9.5 4 13.5H2l4.5-5.5L2 2.5Z"
+                    stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5 7v4M5 5.5v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M8 11V8.5A1.5 1.5 0 0 1 11 8.5V11" stroke="currentColor" stroke-width="1.3"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="footer__col">
+      <p class="footer__col-title">Quick Links</p>
+      <ul class="footer__links" role="list">
+        <li><a th:href="@{/store/home(store=${storeName})}" href="#">Home</a></li>
+        <li><a href="#">Products</a></li>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="#">Blog</a></li>
+      </ul>
+    </div>
+
+    <!-- Support -->
+    <div class="footer__col">
+      <p class="footer__col-title">Support</p>
+      <ul class="footer__links" role="list">
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Shipping Policy</a></li>
+        <li><a href="#">Returns</a></li>
+        <li><a href="#">Track Order</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact & Newsletter -->
+    <div class="footer__col footer__col--newsletter">
+      <p class="footer__col-title">Get in Touch</p>
+      <ul class="footer__contact-list" role="list">
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1.5 3.5h11l-5.5 5-5.5-5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              <rect x="1.5" y="3.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+            </svg>
+          </div>
+          <div>
+            <span class="footer__contact-label">Email</span>
+            <a href="mailto:hello@arclo.com">hello@arclo.com</a>
+          </div>
+        </li>
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2h3l1.5 3-1.5 1a7 7 0 0 0 3 3l1-1.5 3 1.5v3a1 1 0 0 1-1 1C5 13 1 9 1 3a1 1 0 0 1 1-1Z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <span class="footer__contact-label">Phone</span>
+            <a href="tel:+213555000123">+213 555 000 123</a>
+          </div>
+        </li>
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1C4.8 1 3 2.8 3 5c0 3.3 4 8 4 8s4-4.7 4-8c0-2.2-1.8-4-4-4Z"
+                    stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="7" cy="5" r="1.3" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </div>
+          <div>
+            <span class="footer__contact-label">Address</span>
+            Blida, Algeria
+          </div>
+        </li>
+      </ul>
+
+      <div style="margin-top:1.5rem">
+        <p class="footer__newsletter-title">Stay in the loop</p>
+        <p class="footer__newsletter-sub">New drops and exclusive deals — straight to your inbox.</p>
+        <div class="footer__subscribe-row">
+          <input type="email" class="footer__subscribe-input" id="footer-email"
+                 placeholder="you@example.com" aria-label="Email for newsletter" />
+          <button class="footer__subscribe-btn" id="footer-subscribe-btn">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <path d="M1.5 6.5h10M7.5 2.5l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Subscribe
+          </button>
+        </div>
+        <p class="footer__subscribe-note">No spam. Unsubscribe anytime. <a href="#">Privacy Policy</a>.</p>
+        <div class="footer__subscribe-success" id="footer-success" role="status" aria-live="polite">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <circle cx="7.5" cy="7.5" r="6" fill="rgba(92,224,122,.15)" stroke="#5ce07a" stroke-width="1.3"/>
+            <path d="M5 7.5l2 2 3-3" stroke="#5ce07a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          You're subscribed!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="footer__divider" />
+
+  <div class="footer__bottom">
+    <p class="footer__copy">
+      © <span id="footer-year"></span>
+      <span th:text="${storeName}">Arclo</span>, Inc. All rights reserved.
+    </p>
+    <ul class="footer__bottom-links">
+      <li><a href="#">Terms</a></li>
+      <li><a href="#">Privacy</a></li>
+      <li><a href="#">Cookies</a></li>
+    </ul>
+    <button class="footer__top-btn" id="back-to-top" aria-label="Back to top">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" stroke-width="1.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</footer>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script>
+  /* ── Sticky nav shadow ── */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 10);
+  }, { passive: true });
+
+  /* ── Hamburger ── */
+  const hamburger = document.getElementById('hamburger');
+  const drawer    = document.getElementById('mobile-drawer');
+  hamburger.addEventListener('click', () => {
+    const open = hamburger.classList.toggle('open');
+    drawer.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', open);
+    drawer.setAttribute('aria-hidden', !open);
+  });
+
+  /* ── ⌘K focus search ── */
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('search-desktop')?.focus();
+    }
+    if (e.key === 'Escape') {
+      drawer.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  /* ── Quantity stepper ── */
+  const qtyInput = document.getElementById('qty-input');
+  document.getElementById('qty-minus')?.addEventListener('click', () => {
+    const v = parseInt(qtyInput.value, 10);
+    if (v > 1) qtyInput.value = v - 1;
+  });
+  document.getElementById('qty-plus')?.addEventListener('click', () => {
+    const v = parseInt(qtyInput.value, 10);
+    if (v < 99) qtyInput.value = v + 1;
+  });
+  qtyInput?.addEventListener('change', () => {
+    let v = parseInt(qtyInput.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 99) v = 99;
+    qtyInput.value = v;
+  });
+
+  /* ── Cart badge from localStorage ── */
+  const CART_KEY = 'saas_cart';
+  function getCart() { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+  function syncBadge() {
+    const total = getCart().reduce((s, i) => s + i.quantity, 0);
+    const badge = document.getElementById('cart-badge');
+    if (badge) badge.textContent = total;
+  }
+  syncBadge();
+
+  /* ── Footer: current year ── */
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  /* ── Back to top ── */
+  document.getElementById('back-to-top')?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ── Newsletter ── */
+  document.getElementById('footer-subscribe-btn')?.addEventListener('click', () => {
+    const input   = document.getElementById('footer-email');
+    const success = document.getElementById('footer-success');
+    const re      = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(input.value.trim())) {
+      input.style.borderColor = 'rgba(200,80,42,.6)';
+      input.focus();
+      setTimeout(() => input.style.borderColor = '', 1800);
+      return;
+    }
+    input.style.display = 'none';
+    document.getElementById('footer-subscribe-btn').style.display = 'none';
+    success.classList.add('show');
+  });
+</script>
+</body>
+</html>

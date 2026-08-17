@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title th:text="'Cart — ' + ${storeName}">Cart — Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+<style>
+/* ═══════════════════════════════════════════════
+   RESET & DESIGN TOKENS
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:        #ffffff;
+  --surface:      #f8f7f4;
+  --surface-2:    #f2f0eb;
+  --border:       #e8e6e0;
+  --border-hover: #c8c5bc;
+  --ink:          #1a1916;
+  --ink-muted:    #6b6860;
+  --ink-faint:    #a8a59e;
+  --accent:       #c8502a;
+  --accent-deep:  #9e3c1c;
+  --accent-light: #f5ede9;
+  --accent-glow:  rgba(200,80,42,.18);
+  --danger:       #d93025;
+  --danger-light: #fde8e7;
+
+  --shadow-sm: 0 1px 3px rgba(26,25,22,.06), 0 1px 2px rgba(26,25,22,.04);
+  --shadow-md: 0 4px 16px rgba(26,25,22,.09), 0 1px 4px rgba(26,25,22,.04);
+  --shadow-lg: 0 12px 40px rgba(26,25,22,.14), 0 4px 12px rgba(26,25,22,.06);
+
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --nav-h:     68px;
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --spring:    cubic-bezier(.34,1.56,.64,1);
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════════ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  height: var(--nav-h);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 220ms var(--ease), border-color 220ms var(--ease);
+}
+.nav.scrolled { box-shadow: var(--shadow-md); border-bottom-color: var(--border-hover); }
+
+.nav__inner {
+  max-width: 1280px; margin: 0 auto; padding: 0 2rem;
+  height: 100%; display: flex; align-items: center; gap: 2rem;
+}
+
+.nav__logo {
+  flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--ink);
+}
+.nav__logo-mark {
+  width: 34px; height: 34px; background: var(--ink); border-radius: 8px;
+  flex-shrink: 0; position: relative; overflow: hidden;
+  transition: transform 220ms var(--ease);
+}
+.nav__logo-mark::before {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; border: 2.5px solid var(--white);
+  border-radius: 50%; top: 7px; left: 7px;
+}
+.nav__logo-mark::after {
+  content: ''; position: absolute;
+  width: 8px; height: 8px; background: var(--accent);
+  border-radius: 50%; bottom: 7px; right: 7px;
+}
+.nav__logo:hover .nav__logo-mark { transform: rotate(-6deg) scale(1.05); }
+.nav__logo-text {
+  font-family: 'DM Serif Display', serif; font-size: 1.35rem;
+  letter-spacing: -0.02em; line-height: 1; user-select: none;
+}
+.nav__logo-text em { font-style: italic; color: var(--accent); }
+
+.nav__spacer { flex: 1; }
+
+/* Search */
+.nav__search { position: relative; display: flex; align-items: center; }
+.search__icon {
+  position: absolute; left: 11px;
+  color: var(--ink-faint); pointer-events: none; display: flex;
+  transition: color 180ms;
+}
+.nav__search:focus-within .search__icon { color: var(--ink-muted); }
+.search__input {
+  height: 38px; width: 220px; padding: 0 1rem 0 36px;
+  font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 300;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); outline: none;
+  transition: width 220ms var(--ease), border-color 180ms, background 180ms, box-shadow 180ms;
+}
+.search__input::placeholder { color: var(--ink-faint); }
+.search__input:hover  { border-color: var(--border-hover); background: var(--white); }
+.search__input:focus  { width: 280px; border-color: var(--ink); background: var(--white); box-shadow: 0 0 0 3px rgba(26,25,22,.06); }
+.search__kbd {
+  position: absolute; right: 10px;
+  font-size: .7rem; color: var(--ink-faint);
+  background: var(--border); border-radius: 4px; padding: 1px 5px;
+  pointer-events: none; transition: opacity 180ms;
+}
+.nav__search:focus-within .search__kbd { opacity: 0; }
+
+/* Actions */
+.nav__actions { display: flex; align-items: center; gap: .25rem; }
+.nav__btn {
+  position: relative; width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: var(--radius);
+  background: transparent; color: var(--ink-muted); cursor: pointer;
+  text-decoration: none;
+  transition: color 180ms, background 180ms, border-color 180ms, transform 120ms;
+}
+.nav__btn:hover { color: var(--ink); background: var(--surface); border-color: var(--border); }
+.nav__btn:active { transform: scale(.93); }
+.nav__btn svg { display: block; }
+
+.cart-badge {
+  position: absolute; top: 5px; right: 5px;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  background: var(--accent); color: #fff;
+  font-size: .65rem; font-weight: 500; border-radius: 99px;
+  display: grid; place-items: center; line-height: 1; pointer-events: none;
+}
+.cart-wrapper { position: relative; }
+
+/* Hamburger */
+.nav__hamburger {
+  display: none; flex-direction: column; justify-content: center; gap: 5px;
+  width: 40px; height: 40px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; padding: 10px; transition: background 180ms;
+}
+.nav__hamburger span {
+  display: block; height: 1.5px; background: var(--ink); border-radius: 2px;
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease);
+  transform-origin: center;
+}
+.nav__hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.nav__hamburger.open span:nth-child(2) { opacity: 0; }
+.nav__hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* Mobile drawer */
+.nav__drawer {
+  position: fixed; top: var(--nav-h); left: 0; right: 0;
+  background: var(--white); border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-md); padding: 1.25rem 1.5rem 1.5rem;
+  transform: translateY(-8px); opacity: 0; pointer-events: none;
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease); z-index: 999;
+}
+.nav__drawer.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.drawer__search { position: relative; }
+.drawer__search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); display: flex; }
+.drawer__search input {
+  width: 100%; height: 42px; padding: 0 1rem 0 36px;
+  font-family: 'DM Sans', sans-serif; font-size: .875rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--ink); outline: none;
+}
+.drawer__search input:focus { border-color: var(--ink); }
+
+@media (max-width: 768px) {
+  .search__kbd, .nav__search { display: none; }
+  .nav__hamburger { display: flex; }
+  .nav__inner { gap: 1rem; padding: 0 1.25rem; }
+}
+
+/* ═══════════════════════════════════════════════
+   BREADCRUMB
+═══════════════════════════════════════════════ */
+.breadcrumb {
+  max-width: 1100px; margin: 0 auto;
+  padding: calc(var(--nav-h) + 1.75rem) 2rem 0;
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+}
+.breadcrumb a { font-size: .8rem; color: var(--ink-faint); text-decoration: none; transition: color 160ms; }
+.breadcrumb a:hover { color: var(--ink-muted); }
+.breadcrumb__sep { font-size: .8rem; color: var(--ink-faint); user-select: none; }
+.breadcrumb__current { font-size: .8rem; color: var(--ink-muted); font-weight: 400; }
+
+/* ═══════════════════════════════════════════════
+   CART LAYOUT
+═══════════════════════════════════════════════ */
+.cart-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 6rem;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── PAGE TITLE ── */
+.cart-title-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: .5rem;
+}
+
+.cart-page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.cart-page-title em { font-style: italic; color: var(--accent); }
+
+.cart-continue-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .85rem; color: var(--ink-muted); text-decoration: none;
+  transition: color 160ms, gap 200ms var(--ease);
+}
+.cart-continue-link:hover { color: var(--ink); gap: 10px; }
+
+/* ── EMPTY STATE ── */
+.cart-empty {
+  grid-column: 1 / -1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 1rem;
+  gap: 1rem;
+}
+.cart-empty.visible { display: flex; }
+
+.cart-empty__icon {
+  width: 88px; height: 88px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--ink-faint);
+  margin-bottom: .5rem;
+}
+
+.cart-empty__title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem; letter-spacing: -0.02em; color: var(--ink);
+}
+
+.cart-empty__sub {
+  font-size: .9rem; font-weight: 300;
+  color: var(--ink-muted); max-width: 32ch; line-height: 1.65;
+}
+
+.cart-empty__btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 46px; padding: 0 1.75rem;
+  background: var(--ink); color: var(--white);
+  font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 500;
+  border: none; border-radius: var(--radius); cursor: pointer;
+  text-decoration: none; margin-top: .5rem;
+  transition: background 180ms, transform 120ms, box-shadow 200ms;
+}
+.cart-empty__btn:hover { background: var(--accent); box-shadow: 0 6px 18px var(--accent-glow); transform: translateY(-1px); }
+.cart-empty__btn:active { transform: scale(.97); }
+
+/* ── CART TABLE PANEL ── */
+.cart-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+/* Table header */
+.cart-table-head {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1fr 44px;
+  gap: .5rem;
+  padding: .875rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.cart-table-head span {
+  font-size: .68rem; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Cart rows container */
+#cart-body { display: flex; flex-direction: column; }
+
+/* Individual cart row */
+.cart-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1fr 44px;
+  gap: .5rem;
+  padding: 1rem 1.25rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 160ms;
+  animation: row-in 280ms var(--ease);
+}
+.cart-row:last-child { border-bottom: none; }
+.cart-row:hover { background: var(--surface); }
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.cart-row.removing { animation: row-out 250ms var(--ease) forwards; }
+@keyframes row-out { to { opacity: 0; transform: translateX(-12px); max-height: 0; padding: 0; } }
+
+/* Product cell */
+.cart-row__product {
+  display: flex; align-items: center; gap: .75rem; min-width: 0;
+}
+
+.cart-row__thumb {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  display: grid; place-items: center; flex-shrink: 0;
+  overflow: hidden;
+}
+.cart-row__thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.cart-row__name {
+  font-size: .875rem; font-weight: 500; color: var(--ink);
+  line-height: 1.35;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Price / subtotal cells */
+.cart-row__price,
+.cart-row__subtotal {
+  font-size: .875rem; color: var(--ink-muted); font-weight: 300;
+}
+.cart-row__subtotal { font-weight: 500; color: var(--ink); }
+
+/* Quantity stepper */
+.cart-row__qty {
+  display: flex; align-items: center;
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  width: fit-content;
+}
+.qty-btn {
+  width: 30px; height: 32px;
+  display: grid; place-items: center;
+  background: var(--surface); border: none; cursor: pointer;
+  color: var(--ink-muted); font-size: 1rem;
+  transition: background 140ms, color 140ms;
+}
+.qty-btn:hover { background: var(--surface-2); color: var(--ink); }
+.qty-num {
+  width: 38px; height: 32px;
+  border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  text-align: center;
+  font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 500;
+  color: var(--ink); background: var(--white); outline: none;
+  -moz-appearance: textfield;
+}
+.qty-num::-webkit-outer-spin-button,
+.qty-num::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* Remove button */
+.cart-row__remove {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 8px; cursor: pointer; color: var(--ink-faint);
+  transition: color 160ms, background 160ms, border-color 160ms, transform 120ms;
+}
+.cart-row__remove:hover { color: var(--danger); background: var(--danger-light); border-color: rgba(217,48,37,.2); }
+.cart-row__remove:active { transform: scale(.9); }
+
+/* ── ORDER SUMMARY SIDEBAR ── */
+.cart-summary {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  position: sticky;
+  top: calc(var(--nav-h) + 1.5rem);
+}
+
+.cart-summary__title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.15rem; letter-spacing: -0.02em; color: var(--ink);
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+}
+
+.cart-summary__lines {
+  display: flex; flex-direction: column; gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-line {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: .875rem;
+}
+.summary-line__label { color: var(--ink-muted); font-weight: 300; }
+.summary-line__val   { color: var(--ink); font-weight: 400; }
+.summary-line__val--accent { color: var(--accent); }
+
+.summary-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.summary-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 1.5rem;
+}
+.summary-total__label {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.05rem; color: var(--ink); letter-spacing: -0.02em;
+}
+.summary-total__val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem; letter-spacing: -0.03em; color: var(--ink);
+}
+
+/* Confirm order button */
+.btn-checkout {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  height: 52px; width: 100%;
+  background: var(--ink); color: var(--white);
+  font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 500;
+  letter-spacing: .02em;
+  border: 2px solid var(--ink); border-radius: var(--radius);
+  cursor: pointer; text-decoration: none;
+  transition: background 200ms var(--ease), border-color 200ms, transform 120ms, box-shadow 200ms;
+}
+.btn-checkout:hover {
+  background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 8px 24px var(--accent-glow); transform: translateY(-1px);
+}
+.btn-checkout:active { transform: scale(.97); }
+.btn-checkout:disabled, .btn-checkout[disabled] {
+  opacity: .45; cursor: not-allowed;
+  box-shadow: none; transform: none;
+  pointer-events: none;
+}
+
+.btn-checkout__arrow { display: inline-flex; transition: transform 200ms var(--spring); }
+.btn-checkout:hover .btn-checkout__arrow { transform: translateX(3px); }
+
+/* Trust note */
+.cart-summary__trust {
+  display: flex; flex-direction: column; gap: .5rem;
+  margin-top: 1.25rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.trust-line {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .75rem; color: var(--ink-faint);
+}
+.trust-line svg { color: var(--accent); flex-shrink: 0; }
+
+/* ── TOAST NOTIFICATION ── */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--ink); color: var(--white);
+  font-size: .825rem; font-weight: 400;
+  padding: .75rem 1.25rem; border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: 8px;
+  z-index: 2000;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast__dot { width: 6px; height: 6px; border-radius: 50%; background: #5ce07a; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+.footer {
+  background: #111009;
+  color: rgba(255,255,255,.75);
+  position: relative; overflow: hidden;
+}
+.footer::after {
+  content: ''; position: absolute; top: -120px; right: -120px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,80,42,.1) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.footer__main {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto; padding: 5rem 2rem 4rem;
+  display: grid; grid-template-columns: 1.8fr 1fr 1fr 1.4fr; gap: 3rem;
+}
+
+.footer__logo {
+  display: inline-flex; align-items: center; gap: 10px;
+  text-decoration: none; margin-bottom: 1.25rem;
+}
+.footer__logo-mark {
+  width: 34px; height: 34px; background: var(--white);
+  border-radius: 8px; position: relative; flex-shrink: 0; overflow: hidden;
+}
+.footer__logo-mark::before {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; border: 2.5px solid #111009;
+  border-radius: 50%; top: 7px; left: 7px;
+}
+.footer__logo-mark::after {
+  content: ''; position: absolute;
+  width: 8px; height: 8px; background: var(--accent);
+  border-radius: 50%; bottom: 7px; right: 7px;
+}
+.footer__logo-text {
+  font-family: 'DM Serif Display', serif; font-size: 1.3rem;
+  letter-spacing: -0.02em; color: var(--white); line-height: 1;
+}
+.footer__logo-text em { font-style: italic; color: var(--accent); }
+
+.footer__tagline {
+  font-size: .875rem; font-weight: 300; line-height: 1.75;
+  color: rgba(255,255,255,.45); max-width: 26ch; margin-bottom: 1.75rem;
+}
+
+.footer__socials { display: flex; gap: .625rem; }
+.social-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+  display: grid; place-items: center; color: rgba(255,255,255,.5);
+  cursor: pointer; text-decoration: none;
+  transition: color 180ms, background 180ms, transform 140ms var(--spring);
+}
+.social-btn:hover { color: var(--white); background: rgba(255,255,255,.12); transform: translateY(-2px); }
+
+.footer__col-title {
+  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 1.25rem;
+}
+
+.footer__links { list-style: none; display: flex; flex-direction: column; gap: .7rem; }
+.footer__links a {
+  font-size: .875rem; font-weight: 300; color: rgba(255,255,255,.55);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+  transition: color 160ms, gap 200ms var(--ease);
+}
+.footer__links a::before {
+  content: ''; display: block; width: 0; height: 1px;
+  background: var(--accent); border-radius: 1px; transition: width 200ms var(--ease);
+}
+.footer__links a:hover { color: var(--white); gap: 9px; }
+.footer__links a:hover::before { width: 10px; }
+
+.footer__contact-list { list-style: none; display: flex; flex-direction: column; gap: .875rem; }
+.footer__contact-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .85rem; font-weight: 300; color: rgba(255,255,255,.5); line-height: 1.5;
+}
+.footer__contact-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07);
+  display: grid; place-items: center; flex-shrink: 0;
+  color: var(--accent); margin-top: 1px;
+  transition: background 180ms, border-color 180ms;
+}
+.footer__contact-item:hover .footer__contact-icon { background: rgba(200,80,42,.15); border-color: rgba(200,80,42,.25); }
+.footer__contact-item a { color: inherit; text-decoration: none; transition: color 160ms; }
+.footer__contact-item a:hover { color: rgba(255,255,255,.85); }
+.footer__contact-label {
+  display: block; font-size: .68rem; font-weight: 500; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(255,255,255,.25); margin-bottom: 2px;
+}
+
+.footer__newsletter-title {
+  font-family: 'DM Serif Display', serif; font-size: 1.05rem;
+  letter-spacing: -0.02em; color: var(--white); margin-bottom: .5rem; line-height: 1.3;
+}
+.footer__newsletter-sub {
+  font-size: .8rem; font-weight: 300;
+  color: rgba(255,255,255,.4); margin-bottom: 1.125rem; line-height: 1.6;
+}
+.footer__subscribe-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.footer__subscribe-input {
+  flex: 1; height: 40px; padding: 0 .875rem;
+  font-family: 'DM Sans', sans-serif; font-size: .825rem; font-weight: 300;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px; color: var(--white); outline: none; min-width: 0;
+  transition: border-color 180ms, background 180ms;
+}
+.footer__subscribe-input::placeholder { color: rgba(255,255,255,.25); }
+.footer__subscribe-input:focus { border-color: rgba(200,80,42,.5); background: rgba(255,255,255,.1); }
+.footer__subscribe-btn {
+  height: 40px; padding: 0 1rem; background: var(--accent); color: var(--white);
+  font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 500;
+  border: none; border-radius: 9px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background 180ms, transform 120ms;
+  display: flex; align-items: center; gap: 6px;
+}
+.footer__subscribe-btn:hover { background: var(--accent-deep); }
+.footer__subscribe-btn:active { transform: scale(.95); }
+.footer__subscribe-note { font-size: .73rem; color: rgba(255,255,255,.25); line-height: 1.5; }
+.footer__subscribe-note a { color: rgba(255,255,255,.4); text-decoration: underline; transition: color 160ms; }
+.footer__subscribe-note a:hover { color: rgba(255,255,255,.7); }
+.footer__subscribe-success {
+  display: none; align-items: center; gap: 8px;
+  font-size: .82rem; color: #5ce07a; margin-top: .5rem;
+}
+.footer__subscribe-success.show { display: flex; }
+
+.footer__divider {
+  max-width: 1280px; margin: 0 auto; padding: 0 2rem;
+  border: none; border-top: 1px solid rgba(255,255,255,.07);
+  position: relative; z-index: 1;
+}
+.footer__bottom {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto; padding: 1.5rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer__copy { font-size: .78rem; color: rgba(255,255,255,.25); line-height: 1.6; }
+.footer__copy a { color: rgba(255,255,255,.4); text-decoration: none; transition: color 160ms; }
+.footer__copy a:hover { color: var(--accent); }
+.footer__bottom-links { display: flex; gap: 1.5rem; list-style: none; }
+.footer__bottom-links a { font-size: .78rem; color: rgba(255,255,255,.3); text-decoration: none; transition: color 160ms; }
+.footer__bottom-links a:hover { color: rgba(255,255,255,.65); }
+.footer__top-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09);
+  display: grid; place-items: center; cursor: pointer;
+  color: rgba(255,255,255,.4);
+  transition: color 180ms, background 180ms, transform 140ms var(--spring);
+}
+.footer__top-btn:hover { color: var(--white); background: rgba(255,255,255,.12); transform: translateY(-2px); }
+
+@media (max-width: 1060px) {
+  .footer__main { grid-template-columns: 1.5fr 1fr 1fr; }
+  .footer__col--newsletter { grid-column: 1 / -1; max-width: 480px; }
+}
+@media (max-width: 680px) {
+  .footer__main { grid-template-columns: 1fr 1fr; padding: 3.5rem 1.25rem 3rem; gap: 2rem; }
+  .footer__brand { grid-column: 1 / -1; }
+  .footer__col--newsletter { max-width: 100%; }
+}
+@media (max-width: 420px) {
+  .footer__main { grid-template-columns: 1fr; }
+  .footer__bottom { flex-direction: column; align-items: flex-start; }
+  .footer__bottom-links { flex-wrap: wrap; gap: 1rem; }
+}
+
+/* ═══════════════════════════════════════════════
+   CART RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  .cart-page { grid-template-columns: 1fr; padding: 2rem 1.5rem 5rem; }
+  .cart-summary { position: static; }
+  .cart-title-row { grid-column: 1; }
+}
+
+@media (max-width: 640px) {
+  .cart-table-head { display: none; }
+  .cart-row {
+    grid-template-columns: 1fr;
+    gap: .5rem;
+    padding: 1rem;
+    position: relative;
+  }
+  .cart-row__product { padding-right: 2.5rem; }
+  .cart-row__price::before  { content: 'Price: '; color: var(--ink-faint); font-size: .72rem; }
+  .cart-row__subtotal::before { content: 'Subtotal: '; color: var(--ink-faint); font-size: .72rem; }
+  .cart-row__remove {
+    position: absolute; top: 1rem; right: 1rem;
+  }
+  .cart-page { padding: 1.5rem 1rem 4rem; }
+  .breadcrumb { padding: calc(var(--nav-h) + 1rem) 1rem 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<header class="nav" id="navbar" role="banner">
+  <div class="nav__inner">
+
+    <a class="nav__logo"
+       th:href="@{/store/home(store=${storeName})}"
+       href="#"
+       aria-label="Store home">
+      <div class="nav__logo-mark" aria-hidden="true"></div>
+      <span class="nav__logo-text" th:text="${storeName}">Arc<em>lo</em></span>
+    </a>
+
+    <div class="nav__spacer" aria-hidden="true"></div>
+
+    <div class="nav__search" role="search">
+      <span class="search__icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <form th:action="@{/store/home}" action="#" method="get" style="display:contents;">
+        <input type="hidden" name="store" th:value="${storeName}" />
+        <input type="search"
+               class="search__input"
+               id="search-desktop"
+               name="search"
+               placeholder="Search products…"
+               aria-label="Search products" />
+      </form>
+      <span class="search__kbd" aria-hidden="true">⌘K</span>
+    </div>
+
+    <div class="nav__actions">
+      <div class="cart-wrapper">
+        <a class="nav__btn"
+           th:href="@{/store/cart(store=${storeName})}"
+           href="#"
+           aria-label="Shopping cart"
+           title="Cart">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M1 1h2l1.5 8.5h9l1.5-5.5H5" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="7.5" cy="14.5" r="1" fill="currentColor"/>
+            <circle cx="12.5" cy="14.5" r="1" fill="currentColor"/>
+          </svg>
+          <span class="cart-badge" id="cart-badge" aria-live="polite">0</span>
+        </a>
+      </div>
+
+      <button class="nav__hamburger" id="hamburger"
+              aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<nav class="nav__drawer" id="mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
+  <div class="drawer__search" role="search">
+    <span class="drawer__search-icon" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <input type="search" placeholder="Search products…" aria-label="Search products" />
+  </div>
+</nav>
+
+<!-- ═══════════════ BREADCRUMB ═══════════════ -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a th:href="@{/store/home(store=${storeName})}" href="#">Store</a>
+  <span class="breadcrumb__sep" aria-hidden="true">›</span>
+  <span class="breadcrumb__current">Cart</span>
+</nav>
+
+<!-- ═══════════════ CART PAGE ═══════════════ -->
+<main>
+  <div class="cart-page">
+
+    <!-- Title row -->
+    <div class="cart-title-row">
+      <h1 class="cart-page-title">Your <em>Cart</em></h1>
+      <a class="cart-continue-link"
+         th:href="@{/store/home(store=${storeName})}"
+         href="#"
+         aria-label="Continue shopping">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M9 3L4 7.5 9 12" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Continue Shopping
+      </a>
+    </div>
+
+    <!-- Empty state -->
+    <div class="cart-empty" id="cart-empty" role="status" aria-live="polite">
+      <div class="cart-empty__icon" aria-hidden="true">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <path d="M5 5h4l4 20h18l4-14H12" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="17" cy="32" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="27" cy="32" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M22 13v6M19 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="cart-empty__title">Your cart is empty</p>
+      <p class="cart-empty__sub">Looks like you haven't added anything yet. Browse the store and find something you love.</p>
+      <a class="cart-empty__btn"
+         th:href="@{/store/home(store=${storeName})}"
+         href="#">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M9 3L4 7.5 9 12" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Browse Products
+      </a>
+    </div>
+
+    <!-- Cart table -->
+    <div class="cart-panel" id="cart-panel">
+      <!-- Column headers -->
+      <div class="cart-table-head" aria-hidden="true">
+        <span>Product</span>
+        <span>Price</span>
+        <span>Quantity</span>
+        <span>Subtotal</span>
+        <span></span>
+      </div>
+      <!-- Rows injected by JS -->
+      <div id="cart-body" role="list" aria-label="Cart items"></div>
+    </div>
+
+    <!-- Order summary sidebar -->
+    <div class="cart-summary" id="cart-summary">
+      <p class="cart-summary__title">Order Summary</p>
+
+      <div class="cart-summary__lines">
+        <div class="summary-line">
+          <span class="summary-line__label">Items (<span id="summary-count">0</span>)</span>
+          <span class="summary-line__val" id="summary-subtotal">0 DA</span>
+        </div>
+        <div class="summary-line">
+          <span class="summary-line__label">Delivery</span>
+          <span class="summary-line__val summary-line__val--accent">Free</span>
+        </div>
+      </div>
+
+      <hr class="summary-divider" />
+
+      <div class="summary-total">
+        <span class="summary-total__label">Total</span>
+        <span class="summary-total__val" id="summary-total">0 DA</span>
+      </div>
+
+      <!-- Confirm Order — Thymeleaf href -->
+      <a class="btn-checkout"
+         id="checkout-btn"
+         th:href="@{/store/checkout(store=${storeName})}"
+         href="#"
+         aria-label="Confirm order">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Confirm Order
+        <span class="btn-checkout__arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2.5 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.4"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- Trust note -->
+      <div class="cart-summary__trust" aria-label="Trust indicators">
+        <div class="trust-line">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M6.5 1L3 3v3c0 2.4 1.8 4 3.5 5C9.2 10 11 8.4 11 6V3L6.5 1Z"
+                  stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+          Secure &amp; encrypted checkout
+        </div>
+        <div class="trust-line">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <rect x="1.5" y="4" width="10" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M4 4V3a2.5 2.5 0 0 1 5 0v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          Cash on delivery available
+        </div>
+        <div class="trust-line">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M1.5 7l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6.5 7l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Free returns within 30 days
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cart-page -->
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="toast__dot" aria-hidden="true"></span>
+  <span id="toast-msg">Item removed</span>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer" role="contentinfo">
+  <div class="footer__main">
+
+    <div class="footer__brand">
+      <a class="footer__logo"
+         th:href="@{/store/home(store=${storeName})}"
+         href="#"
+         aria-label="Store home">
+        <div class="footer__logo-mark" aria-hidden="true"></div>
+        <span class="footer__logo-text" th:text="${storeName}">Arc<em>lo</em></span>
+      </a>
+      <p class="footer__tagline">
+        Curated tools and hardware for modern creators. Built to last, priced fairly, delivered fast.
+      </p>
+      <nav aria-label="Social media">
+        <div class="footer__socials">
+          <a href="#" class="social-btn" aria-label="Facebook">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M12 2H10C8.9 2 8 2.9 8 4v2H6v2.5h2V14h2.5V8.5H13L13.5 6H10.5V4.5c0-.3.2-.5.5-.5H12V2Z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="3.5" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="8" cy="8" r="2.8" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="11.5" cy="4.5" r=".75" fill="currentColor"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="Twitter">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 2.5h3.5L8.5 7 12 2.5h2L10 8.5l4 5H10.5L7.5 9.5 4 13.5H2l4.5-5.5L2 2.5Z"
+                    stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5 7v4M5 5.5v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M8 11V8.5A1.5 1.5 0 0 1 11 8.5V11" stroke="currentColor" stroke-width="1.3"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="footer__col">
+      <p class="footer__col-title">Quick Links</p>
+      <ul class="footer__links" role="list">
+        <li><a th:href="@{/store/home(store=${storeName})}" href="#">Home</a></li>
+        <li><a href="#">Products</a></li>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="#">Blog</a></li>
+      </ul>
+    </div>
+
+    <div class="footer__col">
+      <p class="footer__col-title">Support</p>
+      <ul class="footer__links" role="list">
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Shipping Policy</a></li>
+        <li><a href="#">Returns</a></li>
+        <li><a href="#">Track Order</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <div class="footer__col footer__col--newsletter">
+      <p class="footer__col-title">Get in Touch</p>
+      <ul class="footer__contact-list" role="list">
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1.5 3.5h11l-5.5 5-5.5-5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              <rect x="1.5" y="3.5" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+            </svg>
+          </div>
+          <div><span class="footer__contact-label">Email</span><a href="mailto:hello@arclo.com">hello@arclo.com</a></div>
+        </li>
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2h3l1.5 3-1.5 1a7 7 0 0 0 3 3l1-1.5 3 1.5v3a1 1 0 0 1-1 1C5 13 1 9 1 3a1 1 0 0 1 1-1Z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div><span class="footer__contact-label">Phone</span><a href="tel:+213555000123">+213 555 000 123</a></div>
+        </li>
+        <li class="footer__contact-item">
+          <div class="footer__contact-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1C4.8 1 3 2.8 3 5c0 3.3 4 8 4 8s4-4.7 4-8c0-2.2-1.8-4-4-4Z" stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="7" cy="5" r="1.3" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </div>
+          <div><span class="footer__contact-label">Address</span>Blida, Algeria</div>
+        </li>
+      </ul>
+
+      <div style="margin-top:1.5rem">
+        <p class="footer__newsletter-title">Stay in the loop</p>
+        <p class="footer__newsletter-sub">New drops and exclusive deals — straight to your inbox.</p>
+        <div class="footer__subscribe-row">
+          <input type="email" class="footer__subscribe-input" id="footer-email"
+                 placeholder="you@example.com" aria-label="Email for newsletter" />
+          <button class="footer__subscribe-btn" id="footer-subscribe-btn">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <path d="M1.5 6.5h10M7.5 2.5l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Subscribe
+          </button>
+        </div>
+        <p class="footer__subscribe-note">No spam. Unsubscribe anytime. <a href="#">Privacy Policy</a>.</p>
+        <div class="footer__subscribe-success" id="footer-success" role="status" aria-live="polite">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <circle cx="7.5" cy="7.5" r="6" fill="rgba(92,224,122,.15)" stroke="#5ce07a" stroke-width="1.3"/>
+            <path d="M5 7.5l2 2 3-3" stroke="#5ce07a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          You're subscribed!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="footer__divider" />
+
+  <div class="footer__bottom">
+    <p class="footer__copy">
+      © <span id="footer-year"></span>
+      <span th:text="${storeName}">Arclo</span>, Inc. All rights reserved.
+    </p>
+    <ul class="footer__bottom-links">
+      <li><a href="#">Terms</a></li>
+      <li><a href="#">Privacy</a></li>
+      <li><a href="#">Cookies</a></li>
+    </ul>
+    <button class="footer__top-btn" id="back-to-top" aria-label="Back to top">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" stroke-width="1.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</footer>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script>
+  /* ── Navbar shadow ── */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 10);
+  }, { passive: true });
+
+  /* ── Hamburger ── */
+  const hamburger = document.getElementById('hamburger');
+  const drawer    = document.getElementById('mobile-drawer');
+  hamburger.addEventListener('click', () => {
+    const open = hamburger.classList.toggle('open');
+    drawer.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', open);
+    drawer.setAttribute('aria-hidden', !open);
+  });
+
+  /* ── ⌘K search focus ── */
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('search-desktop')?.focus();
+    }
+    if (e.key === 'Escape') {
+      drawer.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  /* ══════════════════════════════════════════
+     CART LOGIC  (localStorage)
+  ══════════════════════════════════════════ */
+  const CART_KEY = 'saas_cart';
+
+  function getCart() {
+    return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+  }
+
+  function saveCart(cart) {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  }
+
+  /* ── Toast helper ── */
+  let toastTimer;
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  /* ── Render cart ── */
+  function renderCart() {
+    const cart        = getCart();
+    const tbody       = document.getElementById('cart-body');
+    const emptyEl     = document.getElementById('cart-empty');
+    const panelEl     = document.getElementById('cart-panel');
+    const summaryEl   = document.getElementById('cart-summary');
+    const badgeEl     = document.getElementById('cart-badge');
+    const countEl     = document.getElementById('summary-count');
+    const subtotalEl  = document.getElementById('summary-subtotal');
+    const totalEl     = document.getElementById('summary-total');
+    const checkoutBtn = document.getElementById('checkout-btn');
+
+    tbody.innerHTML = '';
+
+    const isEmpty = cart.length === 0;
+
+    /* Toggle empty / filled state */
+    emptyEl.classList.toggle('visible', isEmpty);
+    panelEl.style.display   = isEmpty ? 'none' : '';
+    summaryEl.style.display = isEmpty ? 'none' : '';
+
+    if (isEmpty) {
+      badgeEl.textContent = '0';
+      return;
+    }
+
+    let total     = 0;
+    let itemCount = 0;
+
+    cart.forEach((item, index) => {
+      const subtotal  = item.price * item.quantity;
+      total          += subtotal;
+      itemCount      += item.quantity;
+
+      /* Build row */
+      const row = document.createElement('div');
+      row.className = 'cart-row';
+      row.setAttribute('role', 'listitem');
+      row.dataset.index = index;
+
+      row.innerHTML = `
+        <!-- Product -->
+        <div class="cart-row__product">
+          <div class="cart-row__thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="2" y="2" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.3" opacity=".3"/>
+              <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3" opacity=".5"/>
+              <path d="M2 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>
+            </svg>
+          </div>
+          <span class="cart-row__name">${escHtml(item.name)}</span>
+        </div>
+
+        <!-- Unit price -->
+        <span class="cart-row__price">${item.price.toFixed(2)} DA</span>
+
+        <!-- Quantity stepper -->
+        <div class="cart-row__qty">
+          <button class="qty-btn" aria-label="Decrease quantity"
+                  onclick="changeQty(${index}, -1)">−</button>
+          <input class="qty-num" type="number" min="1" max="99"
+                 value="${item.quantity}"
+                 aria-label="Quantity for ${escHtml(item.name)}"
+                 onchange="setQty(${index}, this.value)" />
+          <button class="qty-btn" aria-label="Increase quantity"
+                  onclick="changeQty(${index}, 1)">+</button>
+        </div>
+
+        <!-- Subtotal -->
+        <span class="cart-row__subtotal">${subtotal.toFixed(2)} DA</span>
+
+        <!-- Remove -->
+        <button class="cart-row__remove"
+                aria-label="Remove ${escHtml(item.name)} from cart"
+                onclick="removeItem(${index}, this)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 3.5h10M5.5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M3 3.5l.75 8.5h6.5L11 3.5"
+                  stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>`;
+
+      tbody.appendChild(row);
+    });
+
+    /* Update summary */
+    badgeEl.textContent     = itemCount;
+    countEl.textContent     = itemCount;
+    subtotalEl.textContent  = total.toFixed(2) + ' DA';
+    totalEl.textContent     = total.toFixed(2) + ' DA';
+  }
+
+  /* Escape HTML to prevent XSS in dynamic content */
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* ── Increment / decrement quantity ── */
+  function changeQty(index, delta) {
+    const cart = getCart();
+    const newQty = cart[index].quantity + delta;
+    if (newQty < 1) return;
+    if (newQty > 99) return;
+    cart[index].quantity = newQty;
+    saveCart(cart);
+    renderCart();
+  }
+
+  /* ── Set quantity from input ── */
+  function setQty(index, value) {
+    const cart = getCart();
+    let qty = parseInt(value, 10);
+    if (isNaN(qty) || qty < 1) qty = 1;
+    if (qty > 99) qty = 99;
+    cart[index].quantity = qty;
+    saveCart(cart);
+    renderCart();
+  }
+
+  /* ── Remove item with animation ── */
+  function removeItem(index, btn) {
+    const row = btn.closest('.cart-row');
+    const cart = getCart();
+    const name = cart[index]?.name || 'Item';
+
+    if (row) {
+      row.classList.add('removing');
+      setTimeout(() => {
+        cart.splice(index, 1);
+        saveCart(cart);
+        renderCart();
+        showToast(`"${name}" removed from cart`);
+      }, 240);
+    } else {
+      cart.splice(index, 1);
+      saveCart(cart);
+      renderCart();
+      showToast(`"${name}" removed from cart`);
+    }
+  }
+
+  /* ── Init ── */
+  renderCart();
+
+  /* ═══════════════════════════════════════════════
+     FOOTER SCRIPTS
+  ═══════════════════════════════════════════════ */
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  document.getElementById('back-to-top')?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById('footer-subscribe-btn')?.addEventListener('click', () => {
+    const input   = document.getElementById('footer-email');
+    const success = document.getElementById('footer-success');
+    const re      = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(input.value.trim())) {
+      input.style.borderColor = 'rgba(200,80,42,.6)';
+      input.focus();
+      setTimeout(() => input.style.borderColor = '', 1800);
+      return;
+    }
+    input.style.display = 'none';
+    document.getElementById('footer-subscribe-btn').style.display = 'none';
+    success.classList.add('show');
+  });
+</script>
+</body>
+</html>

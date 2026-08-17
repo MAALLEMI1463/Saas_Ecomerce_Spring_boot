@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirmed Orders — AdminFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-100: #dbeafe;
+      --blue-300: #93c5fd;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+
+      --purple-100: #ede9fe;
+      --purple-500: #8b5cf6;
+      --purple-600: #7c3aed;
+
+      --pink-500: #ec4899;
+
+      --green-100: #dcfce7;
+      --green-500: #22c55e;
+      --green-600: #16a34a;
+      --green-700: #15803d;
+
+      --sidebar-w: 260px;
+      --sidebar-w-collapsed: 72px;
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --text-primary: #1e1b4b;
+      --text-muted: #6b7280;
+      --border: rgba(148,163,184,0.18);
+      --shadow-sm: 0 2px 8px rgba(99,102,241,0.07);
+      --shadow-md: 0 8px 32px rgba(99,102,241,0.12);
+      --shadow-lg: 0 20px 60px rgba(99,102,241,0.15);
+      --radius: 18px;
+      --radius-sm: 10px;
+      --transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: var(--transition);
+      box-shadow: 4px 0 30px rgba(99,102,241,0.06);
+      overflow: hidden;
+    }
+    .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 12px;
+      padding: 28px 20px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .brand-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--blue-600), var(--purple-500));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+    }
+    .brand-icon svg { color: #fff; }
+    .brand-text { overflow: hidden; white-space: nowrap; }
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--blue-600), var(--purple-500));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; line-height: 1.2;
+    }
+    .brand-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+    .sidebar-nav {
+      flex: 1; padding: 18px 12px;
+      display: flex; flex-direction: column; gap: 3px;
+      overflow-y: auto; overflow-x: hidden;
+    }
+    .nav-section-label {
+      font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); padding: 10px 10px 6px;
+      white-space: nowrap; transition: var(--transition);
+    }
+    .sidebar.collapsed .nav-section-label { opacity: 0; }
+
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 12px; border-radius: var(--radius-sm);
+      cursor: pointer; text-decoration: none;
+      color: var(--text-muted); font-weight: 500; font-size: 0.9rem;
+      transition: var(--transition); white-space: nowrap;
+      position: relative; overflow: hidden;
+    }
+    .nav-link:hover { background: var(--blue-100); color: var(--blue-600); }
+    .nav-link.active { background: linear-gradient(135deg, #eff6ff, #f5f3ff); color: var(--blue-600); font-weight: 600; }
+    .nav-link.active::before {
+      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+      width: 3px; background: linear-gradient(180deg, var(--blue-500), var(--purple-500));
+      border-radius: 0 4px 4px 0;
+    }
+    .nav-link .nav-icon { width: 20px; height: 20px; display: grid; place-items: center; flex-shrink: 0; }
+    .nav-link .nav-label { overflow: hidden; transition: var(--transition); }
+    .sidebar.collapsed .nav-link .nav-label { width: 0; opacity: 0; }
+    .sidebar.collapsed .nav-link { justify-content: center; }
+    .nav-badge {
+      margin-left: auto; background: var(--pink-500); color: #fff;
+      font-size: 0.65rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; flex-shrink: 0;
+    }
+    .sidebar.collapsed .nav-badge { display: none; }
+
+    .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px; padding: 10px;
+      border-radius: var(--radius-sm); background: linear-gradient(135deg, #f0f4ff, #faf5ff);
+      overflow: hidden;
+    }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue-500), var(--purple-500));
+      display: grid; place-items: center; color: #fff;
+      font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .user-info { overflow: hidden; white-space: nowrap; transition: var(--transition); }
+    .user-name { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+    .user-role { font-size: 0.72rem; color: var(--text-muted); }
+    .sidebar.collapsed .user-info { width: 0; opacity: 0; }
+    .sidebar.collapsed .sidebar-user { justify-content: center; }
+
+    /* ── Main Layout ────────────────────────────────────── */
+    .main-wrapper { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; transition: var(--transition); }
+    .main-wrapper.expanded { margin-left: var(--sidebar-w-collapsed); }
+
+    /* ── Topbar ─────────────────────────────────────────── */
+    .topbar {
+      height: 70px; background: rgba(255,255,255,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      padding: 0 28px; gap: 16px; position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-toggle {
+      width: 38px; height: 38px; border: none; background: var(--bg);
+      border-radius: var(--radius-sm); cursor: pointer; display: grid; place-items: center;
+      color: var(--text-muted); transition: var(--transition); flex-shrink: 0;
+    }
+    .topbar-toggle:hover { background: var(--blue-100); color: var(--blue-600); }
+    .topbar-search { flex: 1; max-width: 380px; position: relative; }
+    .topbar-search input {
+      width: 100%; padding: 9px 14px 9px 40px; border: 1.5px solid var(--border);
+      border-radius: 50px; background: var(--bg); font-family: 'DM Sans', sans-serif;
+      font-size: 0.87rem; color: var(--text-primary); outline: none; transition: var(--transition);
+    }
+    .topbar-search input:focus { border-color: var(--blue-300); background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .topbar-search .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .topbar-btn {
+      width: 38px; height: 38px; border: none; background: var(--bg);
+      border-radius: var(--radius-sm); cursor: pointer; display: grid; place-items: center;
+      color: var(--text-muted); transition: var(--transition); position: relative;
+    }
+    .topbar-btn:hover { background: var(--blue-100); color: var(--blue-600); }
+    .topbar-btn .dot {
+      width: 8px; height: 8px; background: var(--pink-500); border-radius: 50%;
+      border: 2px solid #fff; position: absolute; top: 6px; right: 6px;
+    }
+    .logout-btn {
+      display: flex; align-items: center; gap: 7px; padding: 9px 18px;
+      background: linear-gradient(135deg, #fce7f3, #ede9fe);
+      border: 1.5px solid rgba(236,72,153,0.2); border-radius: 50px;
+      color: var(--purple-600); font-family: 'DM Sans', sans-serif;
+      font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: var(--transition); white-space: nowrap;
+    }
+    .logout-btn:hover { background: linear-gradient(135deg, var(--pink-500), var(--purple-500)); color: #fff; border-color: transparent; box-shadow: 0 4px 15px rgba(236,72,153,0.35); }
+
+    /* ── Page Content ───────────────────────────────────── */
+    .page-content { padding: 28px; flex: 1; }
+
+    .page-header { margin-bottom: 28px; }
+    .page-title {
+      font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800;
+      color: var(--text-primary); line-height: 1.2;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .page-title-badge {
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700;
+      padding: 3px 14px; border-radius: 20px;
+      background: var(--green-100); color: var(--green-700);
+    }
+    .page-subtitle { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .breadcrumb a { color: var(--blue-600); font-weight: 500; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    /* ── Status Tab Bar ─────────────────────────────────── */
+    .status-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .status-tab {
+      display: flex; align-items: center; gap: 7px; padding: 9px 20px;
+      border-radius: 50px; font-size: 0.85rem; font-weight: 600;
+      text-decoration: none; color: var(--text-muted);
+      background: var(--surface); border: 1.5px solid var(--border);
+      transition: var(--transition);
+    }
+    .status-tab:hover { border-color: var(--blue-300); color: var(--blue-600); }
+    .status-tab.active-pending   { background: #fef3c7; color: #d97706; border-color: #fcd34d; }
+    .status-tab.active-confirmed { background: var(--green-100); color: var(--green-700); border-color: #86efac; }
+    .status-tab.active-livred    { background: var(--blue-100); color: var(--blue-600); border-color: var(--blue-300); }
+
+    /* ── Empty State ────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 64px 20px;
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .empty-icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: var(--green-100); color: var(--green-600);
+      display: grid; place-items: center; margin: 0 auto 16px;
+    }
+    .empty-state h3 {
+      font-family: 'Syne', sans-serif; font-size: 1.1rem;
+      font-weight: 700; color: var(--text-primary); margin-bottom: 6px;
+    }
+    .empty-state p { font-size: 0.86rem; color: var(--text-muted); }
+
+    /* ── Order Card ─────────────────────────────────────── */
+    .order-card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--green-500);
+      box-shadow: var(--shadow-sm); margin-bottom: 18px;
+      overflow: hidden; transition: var(--transition);
+      animation: fadeIn 0.4s ease backwards;
+    }
+    .order-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px 14px; border-bottom: 1px solid var(--border);
+    }
+    .order-id { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+    .order-id span { color: var(--green-600); }
+
+    .badge-confirmed {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 14px; border-radius: 20px;
+      background: var(--green-100); color: var(--green-700);
+      font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    .order-meta {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 0; padding: 14px 24px;
+      border-bottom: 1px solid var(--border); background: #f8fff9;
+    }
+    .meta-item {
+      display: flex; flex-direction: column; gap: 3px;
+      padding: 0 10px; border-right: 1px solid var(--border);
+    }
+    .meta-item:first-child { padding-left: 0; }
+    .meta-item:last-child  { border-right: none; }
+    .meta-label {
+      font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted);
+    }
+    .meta-value { font-size: 0.86rem; font-weight: 600; color: var(--text-primary); }
+
+    .order-items-wrap { padding: 16px 24px; }
+    .items-table { width: 100%; border-collapse: collapse; }
+    .items-table thead th {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted);
+      padding: 8px 12px; background: var(--bg);
+      border-bottom: 1px solid var(--border); text-align: left;
+    }
+    .items-table thead th:last-child { text-align: right; }
+    .items-table tbody td {
+      padding: 11px 12px; font-size: 0.88rem; color: var(--text-primary);
+      border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .items-table tbody tr:last-child td { border-bottom: none; }
+    .items-table tbody td:last-child { text-align: right; font-weight: 600; }
+    .product-name { font-weight: 600; color: var(--text-primary); }
+    .qty-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      background: var(--green-100); color: var(--green-700);
+      font-size: 0.78rem; font-weight: 700;
+    }
+
+    .order-card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px 18px; border-top: 1px solid var(--border); background: #f8fff9;
+    }
+    .order-total { display: flex; align-items: baseline; gap: 6px; }
+    .order-total-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+    .order-total-value { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text-primary); }
+    .order-total-currency { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+    .btn-livred {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 26px;
+      background: linear-gradient(135deg, var(--blue-600), #60a5fa);
+      color: #fff; border: none; border-radius: 50px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.28);
+    }
+    .btn-livred:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(37,99,235,0.38); }
+
+    /* ── Overlay & Responsive ───────────────────────────── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(30,27,75,0.35); z-index: 90; backdrop-filter: blur(2px);
+    }
+    .overlay.active { display: block; }
+
+    @media (max-width: 1100px) {
+      .order-meta { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .meta-item { border-right: none; padding: 0; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); width: 260px !important; box-shadow: var(--shadow-lg); }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .main-wrapper { margin-left: 0 !important; }
+      .page-content { padding: 16px; }
+      .topbar { padding: 0 16px; }
+      .logout-btn span { display: none; }
+      .order-meta { grid-template-columns: repeat(2, 1fr); }
+      .order-card-footer { flex-direction: column; gap: 14px; align-items: flex-start; }
+      .status-tabs { flex-wrap: wrap; }
+    }
+    @media (max-width: 520px) {
+      .order-card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .items-table thead { display: none; }
+      .items-table tbody td { display: block; padding: 6px 12px; border: none; }
+      .items-table tbody tr { border-bottom: 1px solid var(--border); display: block; padding: 8px 0; }
+      .items-table tbody td:last-child { text-align: left; }
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.3); border-radius: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="brand-name">AdminFlow</div>
+      <div class="brand-sub">SaaS Dashboard</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main Menu</div>
+
+    <a class="nav-link" href="/user/dashboard">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <a class="nav-link" href="/products">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      <span class="nav-label">Products</span>
+      <!-- <span class="nav-badge">128</span> -->
+    </a>
+
+    <a class="nav-link" href="/products/add">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      <span class="nav-label">Add Product</span>
+      <span class="nav-badge">New</span>
+    </a>
+
+    <a class="nav-link" href="/users">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-label">Users</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Orders Status</div>
+
+    <a class="nav-link" href="/user/orders/pending">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      <span class="nav-label">Pending Orders</span>
+    </a>
+
+    <a class="nav-link active" href="/user/orders/confirmed">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+      <span class="nav-label">Confirmed Orders</span>
+    </a>
+
+    <a class="nav-link" href="/user/orders/livred">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <span class="nav-label">Livred Orders</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar">AO</div>
+      <div class="user-info">
+        <div class="user-name">Admin Owner</div>
+        <div class="user-role">Super Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<div class="main-wrapper" id="mainWrapper">
+
+  <header class="topbar">
+    <button class="topbar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="topbar-search">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Search orders…"/>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" title="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="topbar-btn" title="Messages">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden"
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}"/>
+            <button class="logout-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </form>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="breadcrumb">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <a href="/user/dashboard">Dashboard</a>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        Orders
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        Confirmed
+      </div>
+      <div class="page-title">
+        Confirmed Orders
+        <span class="page-title-badge" th:text="${orders.size()} + ' orders'">0 orders</span>
+      </div>
+      <div class="page-subtitle">Orders confirmed and ready to be dispatched for delivery.</div>
+    </div>
+
+    <!-- Status Tab Bar -->
+    <div class="status-tabs">
+      <a class="status-tab" href="/user/orders/pending">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pending
+      </a>
+      <a class="status-tab active-confirmed" href="/user/orders/confirmed">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Confirmed
+      </a>
+      <a class="status-tab" href="/user/orders/livred">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Livred
+      </a>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${orders.empty}" class="empty-state">
+      <div class="empty-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h3>No Confirmed Orders</h3>
+      <p>There are no confirmed orders awaiting delivery at the moment.</p>
+    </div>
+
+    <!-- Order cards -->
+    <div th:each="order, iterStat : ${orders}"
+         class="order-card"
+         th:style="'animation-delay:' + ${iterStat.index * 60} + 'ms'">
+
+      <!-- Header -->
+      <div class="order-card-header">
+        <div class="order-id">Order <span th:text="'#' + ${order.id}">#—</span></div>
+        <span class="badge-confirmed">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          CONFIRMED
+        </span>
+      </div>
+
+      <!-- Meta -->
+      <div class="order-meta">
+        <div class="meta-item">
+          <span class="meta-label">Phone</span>
+          <span class="meta-value" th:text="${order.phone}">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Wilaya</span>
+          <span class="meta-value" th:text="${order.wilaya}">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Commune</span>
+          <span class="meta-value" th:text="${order.commune}">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Payment</span>
+          <span class="meta-value" th:text="${order.paymentMethod}">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Date</span>
+          <span class="meta-value" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">—</span>
+        </div>
+      </div>
+
+      <!-- Items table -->
+      <div class="order-items-wrap">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Unit Price</th>
+              <th>Qty</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="item : ${order.orderItems}">
+              <td><span class="product-name" th:text="${item.product.name}">—</span></td>
+              <td th:text="${item.price} + ' DA'">—</td>
+              <td><span class="qty-badge" th:text="${item.quantity}">—</span></td>
+              <td th:text="${item.price * item.quantity} + ' DA'">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="order-card-footer">
+        <div class="order-total">
+          <span class="order-total-label">Order Total</span>
+          <span class="order-total-value" th:text="${order.totalPrice}">—</span>
+          <span class="order-total-currency">DA</span>
+        </div>
+
+        <form th:action="@{/user/orders/{id}/livred(id=${order.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button class="btn-livred" type="submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13"/>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+              <circle cx="5.5" cy="18.5" r="2.5"/>
+              <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+            Mark as Livred
+          </button>
+        </form>
+      </div>
+
+    </div><!-- end th:each -->
+
+  </main>
+</div>
+
+<!-- ══════════════════ SCRIPTS ══════════════════ -->
+<script>
+  let isMobile = () => window.innerWidth <= 768;
+  let sidebarOpen = false;
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.getElementById('mainWrapper');
+    const overlay = document.getElementById('overlay');
+    if (isMobile()) {
+      sidebarOpen = !sidebarOpen;
+      sidebar.classList.toggle('mobile-open', sidebarOpen);
+      overlay.classList.toggle('active', sidebarOpen);
+    } else {
+      sidebar.classList.toggle('collapsed');
+      wrapper.classList.toggle('expanded');
+    }
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('overlay').classList.remove('active');
+    sidebarOpen = false;
+  }
+  window.addEventListener('resize', () => { if (!isMobile()) closeSidebar(); });
+
+  function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+      window.location.href = '/logout';
+    }
+  }
+</script>
+</body>
+</html>
